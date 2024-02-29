@@ -1,27 +1,5 @@
 #!/bin/bash
 
-
-cat <<"EOF"
-
-  _________    ___.        .___                    .__                     
- /   _____/__ _\_ |__    __| _/____   _____ _____  |__| ____   ___________ 
- \_____  \|  |  \ __ \  / __ |/  _ \ /     \\__  \ |  |/    \_/ __ \_  __ \
- /        \  |  / \_\ \/ /_/ (  <_> )  Y Y  \/ __ \|  |   |  \  ___/|  | \/
-/_______  /____/|___  /\____ |\____/|__|_|  (____  /__|___|  /\___  >__|   
-        \/          \/      \/            \/     \/        \/     \/       
-
-        Automated Subdomain Gathering Tool
-          Developed By Momen Ali
-              The Cyber Guy
-
-         _           _        _ _ 
-        (_)_ __  ___| |_ __ _| | |
-        | | '_ \/ __| __/ _` | | |
-        | | | | \__ \ || (_| | | |
-        |_|_| |_|___/\__\__,_|_|_|
-
-EOF
-
 # Create a function to print section separators
 section() {
   printf "\n\n\e[92m=============================================\e[0m"
@@ -37,21 +15,14 @@ cd Tools || { echo "Error: Unable to change to Tools directory."; exit 1; }
 section "Updating Repos"
 sudo apt update
 
-# Install Git
-section "Installing Git"
-sudo apt -y install git
+# Define an array of tools to install
+tools=("git" "python3" "python3-pip" "python2")
 
-# Install Python3
-section "Installing Python3"
-sudo apt -y install python3
-
-# Install PIP3
-section "Installing PIP3"
-sudo apt -y install python3-pip
-
-# Install Python2
-section "Installing Python2"
-sudo apt -y install python2
+# Iterate over the array and install each tool
+for tool in "${tools[@]}"; do
+    echo "Installing $tool"
+    sudo apt-get install -y $tool || { echo "Installation of $tool failed"; exit 1; }
+done
 
 # Install Golang
 section "Installing Golang"
