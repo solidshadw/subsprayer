@@ -134,7 +134,7 @@ sublist() {
 
 "
 
-   python3 Tools/Sublist3r/sublist3r.py -d $domains -v -o "$domains/$date/$domains-sublist3r.txt"
+   python3 $HOME/toolsSubsprayer/Sublist3r/sublist3r.py -d $domains -v -o "$domains/$date/$domains-sublist3r.txt"
 
 }
 
@@ -189,7 +189,7 @@ knockDeep() {
 
    mkdir -p $domains/$date/knockpy-deep/
    chmod 777 $domains/$date/knockpy-deep/
-   python3 /mnt/external/Subdomainer/Tools/knock/knockpy.py $domains -o $domains/$date/knockpy-deep/
+   python3 $HOME/toolsSubsprayer/knock/knockpy.py $domains -o $domains/$date/knockpy-deep/
 }
 
 knockFast() {
@@ -205,7 +205,7 @@ knockFast() {
 
    mkdir -p $domains/$date/knockpy-fast/
    chmod 777 $domains/$date/knockpy-fast/
-   python3 /mnt/external/Subdomainer/Tools/knock/knockpy.py $domains --no-http -o $domains/$date/knockpy-fast/
+   python3 $HOME/toolsSubsprayer/knock/knockpy.py $domains --no-http -o $domains/$date/knockpy-fast/
 }
 
 crt() {
@@ -218,7 +218,7 @@ crt() {
 
 "
 
-   python3 Tools/crtsh/crtsh.py -d $domains | tee $domains/$date/$domains-crtsh.txt
+   python3 $HOME/toolsSubsprayer/crtsh/crtsh.py -d $domains | tee $domains/$date/$domains-crtsh.txt
 }
 
 date=$(date +'%m-%d-%Y')
@@ -253,7 +253,7 @@ else
 
 "
 
-      python3 Tools/github-search/github-subdomains.py -d $domains -t $gitoken -v | tee $domains/$date/githubsubs.txt
+      python3 $HOME/toolsSubsprayer/github-search/github-subdomains.py -d $domains -t $gitoken -v | tee $domains/$date/githubsubs.txt
 
    fi
 
@@ -319,7 +319,7 @@ crtIgnore() {
 
 "
 
-   python3 Tools/crtsh/crtsh.py crtsh -d $domains | tee "result/$date/$domains-crtsh.txt"
+   python3 $HOME/toolsSubsprayer/crtsh/crtsh.py crtsh -d $domains | tee "result/$date/$domains-crtsh.txt"
 }
 
 subfIgnore() {
@@ -347,7 +347,7 @@ sublistIgnore() {
 
 "
 
-   python3 Tools/Sublist3r/sublist3r.py -d $domains -v -o "result/$date/$domains-sublist3r.txt"
+   python3 $HOME/toolsSubsprayer/Sublist3r/sublist3r.py -d $domains -v -o "result/$date/$domains-sublist3r.txt"
 
 }
 
@@ -401,7 +401,7 @@ knockFastIgnore() {
 
    mkdir -p result/$date/$domains-knockpy-fast/
    chmod 777 result/$date/$domains-knockpy-fast/
-   python3 /mnt/external/Subdomainer/Tools/knock/knockpy.py $domains --no-http -o result/$date/$domains-knockpy-fast/
+   python3 $HOME/toolsSubsprayer/knock/knockpy.py $domains --no-http -o result/$date/$domains-knockpy-fast/
 
 }
 
@@ -417,7 +417,7 @@ knockDeepIgnore() {
 
    mkdir -p result/$date/$domains-knockpy-deep/
    chmod 777 result/$date/$domains-knockpy-deep/
-   python3 /mnt/external/Subdomainer/Tools/knock/knockpy.py$domains -o result/$date/$domains-knockpy-deep/
+   python3 $HOME/toolsSubsprayer/knock/knockpy.py$domains -o result/$date/$domains-knockpy-deep/
 
 }
 
@@ -584,7 +584,7 @@ else
 
 "
 
-            python3 Tools/github-search/github-subdomains.py -d $domains -t $gitoken -v | tee $domains/$date/githubsubs.txt
+            python3 $HOME/toolsSubsprayer/github-search/github-subdomains.py -d $domains -t $gitoken -v | tee $domains/$date/githubsubs.txt
 
          fi
 
