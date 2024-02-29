@@ -1,72 +1,320 @@
 #!/bin/bash
 
-# Create a function to print section separators
-section() {
-  printf "\n\n\e[92m=============================================\e[0m"
-  printf "\n\n\e[92m%s\e[0m" "$1"
-  printf "\n\n\e[92m=============================================\e[0m\n\n"
+# Check if $SUDO is available
+if command -v sudo &> /dev/null
+then
+    SUDO=sudo
+else
+    SUDO=""
+fi
+
+# Create a function to print echo separators
+section() { 
+  printf "\n\n\e[92m+---------------------------------------------+\e[0m"
+  printf "\n\e[92m|                                             |\e[0m"
+  printf "\n\e[92m|   %s\e[0m" "$1"
+  printf "\n\e[92m|                                             |\e[0m"
+  printf "\n\e[92m+---------------------------------------------+\e[0m\n\n"
 }
 
 # Create and change to the Tools directory
-mkdir -p Tools
-cd Tools || { echo "Error: Unable to change to Tools directory."; exit 1; }
+setup_tools_directory() {
+  mkdir -p $HOME/toolsSubsprayer
+  cd $HOME/toolsSubsprayer || { echo "Error: Unable to change to Tools directory."; exit 1; }
+}
 
 # Update repositories
-section "Updating Repos"
-sudo apt update
+update_repos() {
+  section "Updating Repos"
+  DEBIAN_FRONTEND=noninteractive $SUDO apt update
+}
 
-# Define an array of tools to install
-tools=("git" "python3" "python3-pip" "python2")
+# Install tools
+install_tools() {
+  section "Installing system tools"
+  # Define an array of tools to install
+  tools=("git" "python3" "python3-pip" "python2" "curl" "wget" "nano")
 
-# Iterate over the array and install each tool
-for tool in "${tools[@]}"; do
-    echo "Installing $tool"
-    sudo apt-get install -y $tool || { echo "Installation of $tool failed"; exit 1; }
-done
+  # Iterate over the array and install each tool
+  for tool in "${tools[@]}"; do
+      echo "Installing $tool"
+      DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y $tool || { echo "Installation of $tool failed"; exit 1; }
+  done
+}
 
 # Install Golang
-section "Installing Golang"
-sudo apt -y install golang
+install_go() {
+  section "Installing Go..."
+  if ! command -v /usr/local/go/bin/go; then
+    # Download the latest stable Go version from the official website
+    wget https://go.dev/dl/$(curl -s https://go.dev/dl/ | grep -o 'go[0-9]*\.[0-9]*\.[0-9]*\.linux-amd64\.tar\.gz' | head -n 1) >/dev/null 2>&1
+    # Extract and install Go
+    $SUDO tar -C /usr/local -xzf go*.linux-amd64.tar.gz
+
+    # Add Go to the PATH
+    export PATH=$PATH:/usr/local/go/bin
+
+    # Determine the user's shell
+    current_shell=$(ps -p $$ -ocomm=)
+
+    if [[ "$current_shell" == *"bash"* ]]; then
+      # User is using bash
+      echo "User is using bash"
+      shellrc_file="$HOME/.bashrc"
+    elif [[ "$current_shell" == *"zsh"* ]]; then
+      # User is using zsh
+      echo "User is using zsh"    
+      shellrc_file="$HOME/.zshrc"
+    else
+      echo "Unknown shell. Unable to configure the environment. Please add Go to your PATH manually."
+      return 1
+    fi
+
+    # Check if the export line is already present in the user's shell configuration file
+    if ! grep -q "export PATH=\$PATH:/usr/local/go/bin" "$shellrc_file"; then
+      echo 'export PATH=$PATH:/usr/local/go/bin' >> "$shellrc_file"
+      source $shellrc_file
+    fi
+
+    # Clean up the downloaded tar.gz file
+    rm go*.linux-amd64.tar.gz
+    echo "Go installed successfully!"
+    go version
+  else
+    echo -e "${BLUE}Go is already installed${NC}"
+    go version
+  fi
+}
 
 # Install additional packages
-section "Installing Additional Packages"
-sudo apt -y install libcurl4-openssl-dev libxml2 libxml2-dev libxslt1-dev ruby-dev build-essential libgmp-dev zlib1g-dev build-essential libssl-dev libffi-dev python-dev libldns-dev jq ruby-full python3-setuptools python3-dnspython rename findutils
+install_additional_packages() {
+  section "Installing Additional Packages"
+  DEBIAN_FRONTEND=noninteractive $SUDO apt -y install libcurl4-openssl-dev libxml2 libxml2-dev libxslt1-dev ruby-dev build-essential libgmp-dev zlib1g-dev build-essential libssl-dev libffi-dev python-dev libldns-dev jq ruby-full python3-setuptools python3-dnspython rename findutils
+}
 
 # Install Sublist3r
-section "Sublist3r Installing"
-git clone https://github.com/aboul3la/Sublist3r.git
-cd Sublist3r/ || { echo "Error: Unable to change to Sublist3r directory."; exit 1; }
-pip3 install -r requirements.txt
-cd ../ || { echo "Error: Unable to return to the parent directory."; exit 1; }
+install_sublist3r() {
+  section "Sublist3r Installing"
+  git clone https://github.com/aboul3la/Sublist3r.git $HOME/toolsSubsprayer/Sublist3r
+  cd $HOME/toolsSubsprayer/Sublist3r || { echo "Error: Unable to change to Sublist3r directory."; exit 1; }
+  pip3 install -r requirements.txt
+  cd ../ || { echo "Error: Unable to return to the parent directory."; exit 1; }
+}
 
-# Install httpx in golang
-go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+install_httpx() {
+  section "Installing httpx..."
+  # Check if httpx is found in ~/go/bin/httpx
+  if [ -x "$HOME/go/bin/httpx" ]; then
+      echo -e "${BLUE}httpx is already installed in $HOME/go/bin${NC}"
+      
+      # If not found in /usr/local/bin, copy it there. So, that you are aware of what go tools you have installed
+      if [ ! -x "/usr/local/bin/httpx" ]; then
+          $SUDO cp "$HOME/go/bin/httpx" "/usr/local/bin/httpx"
+          echo "httpx copied to /usr/local/bin"
+      fi
+  fi
+
+  # Check if httpx is found in /usr/local/bin/httpx
+  if [ -x "/usr/local/bin/httpx" ]; then
+      echo -e "${BLUE}httpx is already installed in /usr/local/bin${NC}"
+      
+      # If not found in ~/go/bin, copy it there
+      if [ ! -x "$HOME/go/bin/httpx" ]; then
+          cp "/usr/local/bin/httpx" "$HOME/go/bin/httpx"
+          echo "httpx copied to $HOME/go/bin"
+      fi
+  fi
+
+  #If not installed in either location, install it
+  if [ ! -x "$HOME/go/bin/httpx" ] && [ ! -x "/usr/local/bin/httpx" ]; then    
+      if ! command -v httpx; then
+          if error_message=$(go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest 2>&1 >/dev/null); then
+              $SUDO cp $HOME/go/bin/httpx /usr/local/bin
+              echo "httpx installed successfully!"
+              successful_tools+=("httpx")
+          else
+              echo -e "${RED}Failed to install httpx.${NC}"
+              failed_tools+=("httpx: $error_message")
+          fi
+      else
+          echo -e "${BLUE}httpx is already installed${NC}"
+      fi
+      
+  fi
+}
 
 # Install other tools
-sudo apt -y install amass subfinder gobuster
-pip3 install requests
-pip3 install dnspython
-pip3 install argparse 
+install_pip3_tools() {
+  section "Installing pip3 tools..."
+  pip3 install requests
+  pip3 install dnspython
+  pip3 install argparse 
+}
 
-# Install httpx in golang
-go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
-mv /root/go/bin/httpx /usr/bin/
+# Install gobuster
+install_gobuster() {
+  section "Installing gobuster..."
+
+  #check if gobuster is found in /go/bin/gobuster
+  if [ -x "$HOME/go/bin/gobuster" ]; then
+      echo -e "${BLUE}gobuster is already installed in $HOME/go/bin${NC}"
+      
+      # If not found in /usr/local/bin, copy it there. So, that you are aware of what go tools you have installed
+      if [ ! -x "/usr/local/bin/gobuster" ]; then
+          $SUDO cp "$HOME/go/bin/gobuster" "/usr/local/bin/gobuster"
+          echo "gobuster copied to /usr/local/bin"
+      fi
+  fi
+
+  #check if gobuster is found in /usr/local/bin/gobuster
+  if [ -x "/usr/local/bin/gobuster" ]; then
+      echo -e "${BLUE}gobuster is already installed in /usr/local/bin${NC}"
+      
+      # If not found in ~/go/bin, copy it there
+      if [ ! -x "$HOME/go/bin/gobuster" ]; then
+          cp "/usr/local/bin/gobuster" "$HOME/go/bin/gobuster"
+          echo "gobuster copied to $HOME/go/bin"
+      fi
+  fi
+
+  #if not installed in either location, install it
+  if [ ! -x "$HOME/go/bin/gobuster" ] && [ ! -x "/usr/local/bin/gobuster" ]; then
+      if ! command -v gobuster; then
+          if error_message=$(go install github.com/OJ/gobuster/v3@latest 2>&1 >/dev/null); then
+              $SUDO cp $HOME/go/bin/gobuster /usr/local/bin
+              echo "gobuster installed successfully!"
+              successful_tools+=("gobuster")
+          else
+              echo -e "${RED}Failed to install gobuster.${NC}"
+              failed_tools+=("gobuster: $error_message")
+          fi
+      else
+          echo -e "${BLUE}gobuster is already installed${NC}"
+      fi
+  fi
+}
 
 # Install Github-Search
-section "Github-Search Installing"
-git clone https://github.com/gwen001/github-search.git
-cd github-search
-pip3 install -r requirements.txt
-cd ../ || { echo "Error: Unable to return to the parent directory."; exit 1; }
+install_github_search() {
+  section "Github-Search Installing"
+  git clone https://github.com/gwen001/github-search.git $HOME/toolsSubsprayer/github-search
+  cd $HOME/toolsSubsprayer/github-search
+  pip3 install -r requirements.txt
+  cd ../ || { echo "Error: Unable to return to the parent directory."; exit 1; }
+}
+
+install_subfinder() {
+  section "Installing subfinder..."
+
+  # Check if subfinder is found in ~/go/bin/subfinder
+  if [ -x "$HOME/go/bin/subfinder" ]; then
+      echo -e "${BLUE}subfinder is already installed in $HOME/go/bin${NC}"
+      
+      # If not found in /usr/local/bin, copy it there. So, that you are aware of what go tools you have installed
+      if [ ! -x "/usr/local/bin/subfinder" ]; then
+          $SUDO cp "$HOME/go/bin/subfinder" "/usr/local/bin/subfinder"
+          echo "subfinder copied to /usr/local/bin"
+      fi
+  fi
+
+  # Check if subfinder is found in /usr/local/bin/subfinder
+  if [ -x "/usr/local/bin/subfinder" ]; then
+      echo -e "${BLUE}subfinder is already installed in /usr/local/bin${NC}"
+      
+      # If not found in ~/go/bin, copy it there
+      if [ ! -x "$HOME/go/bin/subfinder" ]; then
+          cp "/usr/local/bin/subfinder" "$HOME/go/bin/subfinder"
+          echo "subfinder copied to $HOME/go/bin"
+      fi
+  fi
+
+  #If not installed in either location, install it
+  if [ ! -x "$HOME/go/bin/subfinder" ] && [ ! -x "/usr/local/bin/subfinder" ]; then    
+      if ! command -v subfinder; then
+          if error_message=$(go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest 2>&1 >/dev/null); then
+              $SUDO cp $HOME/go/bin/subfinder /usr/local/bin
+              echo "subfinder installed successfully!"
+              successful_tools+=("subfinder")
+          else
+              echo -e "${RED}Failed to install subfinder.${NC}"
+              failed_tools+=("subfinder: $error_message")
+          fi
+      else
+          echo -e "${BLUE}subfinder is already installed${NC}"
+      fi
+      
+  fi
+}
+
+install_amass() {
+  section "Installing amass..."
+  # Check if amass is found in ~/go/bin/amass
+  if [ -x "$HOME/go/bin/amass" ]; then
+      echo -e "${BLUE}amass is already installed in $HOME/go/bin${NC}"
+      
+      #If not found in /usr/local/bin, copy it there. So, that you are aware of what go tools you have installed
+      if [ ! -x "/usr/local/bin/amass" ]; then
+            $SUDO cp "$HOME/go/bin/amass" "/usr/local/bin/amass"
+            echo "amass copied to /usr/local/bin"
+      fi
+  fi
+
+  # Check if amass is found in /usr/local/bin/amass
+  if [ -x "/usr/local/bin/amass" ]; then
+      echo -e "${BLUE}amass is already installed in /usr/local/bin${NC}"
+      
+      #If not found in ~/go/bin, copy it there
+      if [ ! -x "$HOME/go/bin/amass" ]; then
+          cp "/usr/local/bin/amass" "$HOME/go/bin/amass"
+          echo "amass copied to $HOME/go/bin"
+      fi
+  fi
+
+  #If not installed in either location, install it
+  if [ ! -x "$HOME/go/bin/amass" ] && [ ! -x "/usr/local/bin/amass" ]; then    
+      if ! command -v amass; then
+          if error_message=$(go install -v github.com/owasp-amass/amass/v4/...@master 2>&1 >/dev/null); then
+              $SUDO cp $HOME/go/bin/amass /usr/local/bin
+              echo "amass installed successfully!"
+              successful_tools+=("amass")
+          else
+              echo -e "${RED}Failed to install amass.${NC}"
+              failed_tools+=("amass: $error_message")
+          fi
+      else
+          echo -e "${BLUE}amass is already installed${NC}"
+      fi
+      
+  fi
+}
 
 # Install Knockpy
-section "Knockpy Installing"
-git clone https://github.com/guelfoweb/knock.git
-cd knock
-pip3 install -r requirements.txt
-cd ../ || { echo "Error: Unable to return to the parent directory.";
-
+install_knockpy() {
+  section "Knockpy Installing"
+  git clone https://github.com/guelfoweb/knock.git $HOME/toolsSubsprayer/knock
+  cd $HOME/toolsSubsprayer/knock
+  pip3 install -r requirements.txt
+  cd ../ || { echo "Error: Unable to return to the parent directory."; exit 1; }
+}
 
 # Install crtsh
-git clone https://github.com/YashGoti/crtsh.py.git crtsh
+install_crtsh() {
+  section "Installing crtsh..."
+  git clone https://github.com/YashGoti/crtsh.py.git $HOME/toolsSubsprayer/crtsh
+}
 
+# Call all functions
+setup_tools_directory
+update_repos
+install_tools
+install_additional_packages
+install_pip3_tools
+install_go
+install_sublist3r
+install_httpx
+install_amass
+install_gobuster
+install_github_search
+install_subfinder
+install_knockpy
+install_crtsh
