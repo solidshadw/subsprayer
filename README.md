@@ -18,7 +18,10 @@ To install Subsprayer, run the `install.sh` script:
 chmod +x install.sh
 ./install.sh
 ```
-This will install the required tools to run subsprayer. If it fails run it again.
+
+This will install the required tools to run subsprayer. During the installation, a Python virtual environment is created for some of the python tools. 
+Some of the python tools might fail and you will have to install the requirements manually.
+If it fails run it again.
 
 ## Usage
 

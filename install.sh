@@ -23,34 +23,71 @@ setup_tools_directory() {
   cd $HOME/toolsSubsprayer || { echo "Error: Unable to change to Tools directory."; exit 1; }
 }
 
-# Update repositories
+# Update repositories 
 update_repos() {
   section "Updating Repos"
-  DEBIAN_FRONTEND=noninteractive $SUDO apt update
+  if command -v apt &> /dev/null
+  then
+    DEBIAN_FRONTEND=noninteractive $SUDO apt update
+  elif command -v pacman &> /dev/null
+  then
+    $SUDO pacman -Syu --noconfirm
+  else
+    echo "Error: No compatible package manager found (apt or pacman)."
+    exit 1
+  fi
 }
 
-# Install tools
-install_tools() {
-  section "Installing system tools"
-  # Define an array of tools to install
-  tools=("git" "python3" "python3-pip" "python2" "curl" "wget" "nano")
+# Install system tools and packages
+install_system_tools() {
+  section "Installing Additional Packages"
+  
+  # Define an array of tools to install for Debian-based systems
+  debian_tools=("git" "python3" "python3-pip" "python3-venv" "curl" "wget" "nano" "libcurl4-openssl-dev" "libxml2" "libxml2-dev" "libxslt1-dev" "ruby-dev" "build-essential" "libgmp-dev" "zlib1g-dev" "build-essential" "libssl-dev" "libffi-dev" "python-dev" "libldns-dev" "jq" "ruby-full" "python3-setuptools" "python3-dnspython" "rename" "findutils" "python3-pip" "python3-requests")
 
-  # Iterate over the array and install each tool
-  for tool in "${tools[@]}"; do
+  # Define an array of tools to install for Arch-based systems
+  arch_tools=("git" "python" "python-pip" "curl" "wget" "nano" "curl" "libxml2" "libxslt" "ruby" "base-devel" "gmp" "zlib" "openssl" "libffi" "python" "argparse" "ldns" "jq" "ruby" "python-setuptools" "python-dnspython" "perl-rename" "findutils" "python-pip" "python-requests")
+  # Determine the package manager and install the appropriate tools
+  if command -v apt &> /dev/null
+  then
+    for tool in "${debian_tools[@]}"; do
       echo "Installing $tool"
       DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y $tool || { echo "Installation of $tool failed"; exit 1; }
-  done
+    done
+  elif command -v pacman &> /dev/null
+  then
+    for tool in "${arch_tools[@]}"; do
+      echo "Installing $tool"
+      $SUDO pacman -S --noconfirm $tool || { echo "Installation of $tool failed"; exit 1; }
+    done
+  else
+    echo "Error: No compatible package manager found (apt or pacman)."
+    exit 1
+  fi
 }
 
 # Install Golang
 install_go() {
-  section "Installing Go..."
+  #section "Installing Go..."
   if ! command -v /usr/local/go/bin/go; then
-    # Download the latest stable Go version from the official website
-    wget https://go.dev/dl/$(curl -s https://go.dev/dl/ | grep -o 'go[0-9]*\.[0-9]*\.[0-9]*\.linux-amd64\.tar\.gz' | head -n 1) >/dev/null 2>&1
-    # Extract and install Go
-    $SUDO tar -C /usr/local -xzf go*.linux-amd64.tar.gz
+    # Extract the Go file name from the official website
+    go_file=$(curl -s https://go.dev/dl/ | grep -o 'go[0-9]*.[0-9]*.[0-9]*.linux-amd64.tar.gz' | head -n 1)
+    echo "Go file name: $go_file"
 
+    # Download the Go file
+    wget https://go.dev/dl/$go_file
+
+    # Check if wget command was successful
+    if [ $? -eq 0 ]; then
+      echo "Go download successful"
+    else
+      echo "Go download failed"
+      exit 1
+    fi
+
+    # Extract and install Go
+    $SUDO tar -C /usr/local -xzf $go_file
+    
     # Add Go to the PATH
     export PATH=$PATH:/usr/local/go/bin
 
@@ -86,18 +123,15 @@ install_go() {
   fi
 }
 
-# Install additional packages
-install_additional_packages() {
-  section "Installing Additional Packages"
-  DEBIAN_FRONTEND=noninteractive $SUDO apt -y install libcurl4-openssl-dev libxml2 libxml2-dev libxslt1-dev ruby-dev build-essential libgmp-dev zlib1g-dev build-essential libssl-dev libffi-dev python-dev libldns-dev jq ruby-full python3-setuptools python3-dnspython rename findutils
-}
-
 # Install Sublist3r
 install_sublist3r() {
   section "Sublist3r Installing"
   git clone https://github.com/aboul3la/Sublist3r.git $HOME/toolsSubsprayer/Sublist3r
   cd $HOME/toolsSubsprayer/Sublist3r || { echo "Error: Unable to change to Sublist3r directory."; exit 1; }
+  python3 -m venv venv
+  source venv/bin/activate
   pip3 install -r requirements.txt
+  deactivate
   cd ../ || { echo "Error: Unable to return to the parent directory."; exit 1; }
 }
 
@@ -141,14 +175,6 @@ install_httpx() {
       fi
       
   fi
-}
-
-# Install other tools
-install_pip3_tools() {
-  section "Installing pip3 tools..."
-  pip3 install requests
-  pip3 install dnspython
-  pip3 install argparse 
 }
 
 # Install gobuster
@@ -199,7 +225,10 @@ install_github_search() {
   section "Github-Search Installing"
   git clone https://github.com/gwen001/github-search.git $HOME/toolsSubsprayer/github-search
   cd $HOME/toolsSubsprayer/github-search
+  python3 -m venv venv
+  source venv/bin/activate
   pip3 install -r requirements.txt
+  deactivate
   cd ../ || { echo "Error: Unable to return to the parent directory."; exit 1; }
 }
 
@@ -293,7 +322,10 @@ install_knockpy() {
   section "Knockpy Installing"
   git clone https://github.com/guelfoweb/knock.git $HOME/toolsSubsprayer/knock
   cd $HOME/toolsSubsprayer/knock
+  python3 -m venv venv
+  source venv/bin/activate
   pip3 install -r requirements.txt
+  deactivate
   cd ../ || { echo "Error: Unable to return to the parent directory."; exit 1; }
 }
 
@@ -306,9 +338,7 @@ install_crtsh() {
 # Call all functions
 setup_tools_directory
 update_repos
-install_tools
-install_additional_packages
-install_pip3_tools
+install_system_tools
 install_go
 install_sublist3r
 install_httpx
