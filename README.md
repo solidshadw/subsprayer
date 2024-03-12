@@ -4,6 +4,7 @@ Subsprayer is a tool for enumerating and brute forcing subdomains of a given dom
 
 ## Requirements
 
+This has been tested and made for Ubuntu(apt) and Manjaro Arch(pacman) linux distributions.
 Before running Subsprayer, you need to have the following:
 
 - Python 3.6 or higher
