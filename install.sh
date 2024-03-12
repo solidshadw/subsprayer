@@ -68,7 +68,7 @@ install_system_tools() {
 
 # Install Golang
 install_go() {
-  #section "Installing Go..."
+  section "Installing Go..."
   if ! command -v /usr/local/go/bin/go; then
     # Extract the Go file name from the official website
     go_file=$(curl -s https://go.dev/dl/ | grep -o 'go[0-9]*.[0-9]*.[0-9]*.linux-amd64.tar.gz' | head -n 1)
