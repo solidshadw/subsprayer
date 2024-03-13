@@ -189,7 +189,7 @@ knockDeep() {
 
    mkdir -p $domains/$date/knockpy-deep/
    chmod 777 $domains/$date/knockpy-deep/
-   python3 $HOME/toolsSubsprayer/knock/knockpy.py $domains -o $domains/$date/knockpy-deep/
+   python3 $HOME/toolsSubsprayer/knock/knock/knockpy.py $domains -o $domains/$date/knockpy-deep/
 }
 
 knockFast() {
@@ -205,7 +205,7 @@ knockFast() {
 
    mkdir -p $domains/$date/knockpy-fast/
    chmod 777 $domains/$date/knockpy-fast/
-   python3 $HOME/toolsSubsprayer/knock/knockpy.py $domains --no-http -o $domains/$date/knockpy-fast/
+   python3 $HOME/toolsSubsprayer/knock/knock/knockpy.py $domains --no-http -o $domains/$date/knockpy-fast/
 }
 
 crt() {
@@ -401,7 +401,7 @@ knockFastIgnore() {
 
    mkdir -p result/$date/$domains-knockpy-fast/
    chmod 777 result/$date/$domains-knockpy-fast/
-   python3 $HOME/toolsSubsprayer/knock/knockpy.py $domains --no-http -o result/$date/$domains-knockpy-fast/
+   python3 $HOME/toolsSubsprayer/knock/knock/knockpy.py $domains --no-http -o result/$date/$domains-knockpy-fast/
 
 }
 
@@ -417,7 +417,7 @@ knockDeepIgnore() {
 
    mkdir -p result/$date/$domains-knockpy-deep/
    chmod 777 result/$date/$domains-knockpy-deep/
-   python3 $HOME/toolsSubsprayer/knock/knockpy.py$domains -o result/$date/$domains-knockpy-deep/
+   python3 $HOME/toolsSubsprayer/knock/knock/knockpy.py$domains -o result/$date/$domains-knockpy-deep/
 
 }
 
