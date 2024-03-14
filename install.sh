@@ -43,22 +43,29 @@ install_system_tools() {
   section "Installing Additional Packages"
   
   # Define an array of tools to install for Debian-based systems
-  debian_tools=("git" "python3" "python3-pip" "python3-venv" "curl" "wget" "nano" "libcurl4-openssl-dev" "libxml2" "libxml2-dev" "libxslt1-dev" "ruby-dev" "build-essential" "libgmp-dev" "zlib1g-dev" "build-essential" "libssl-dev" "libffi-dev" "python-dev" "libldns-dev" "jq" "ruby-full" "python3-setuptools" "python3-dnspython" "rename" "findutils" "python3-pip" "python3-requests")
+  debian_tools=("git" "python3" "python3-pip" "python3-venv" "curl" "wget" "nano" "libcurl4-openssl-dev" "libxml2")
 
   # Define an array of tools to install for Arch-based systems
-  arch_tools=("git" "python" "python-pip" "curl" "wget" "nano" "curl" "libxml2" "libxslt" "ruby" "base-devel" "gmp" "zlib" "openssl" "libffi" "python" "argparse" "ldns" "jq" "ruby" "python-setuptools" "python-dnspython" "perl-rename" "findutils" "python-pip" "python-requests")
+  arch_tools=("git" "python" "python-pip" "curl" "wget" "nano" "curl" "libxml2" "libxslt" "ruby" "base-devel" "gmp")
+
   # Determine the package manager and install the appropriate tools
-  if command -v apt &> /dev/null
-  then
+  if command -v apt &> /dev/null; then
     for tool in "${debian_tools[@]}"; do
-      echo "Installing $tool"
-      DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y $tool || { echo "Installation of $tool failed"; exit 1; }
+      if ! dpkg -l | grep -q "^ii  $tool "; then
+        echo "Installing $tool"
+        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y $tool || { echo "Installation of $tool failed"; exit 1; }
+      else
+        echo "$tool is already installed, skipping..."
+      fi
     done
-  elif command -v pacman &> /dev/null
-  then
+  elif command -v pacman &> /dev/null; then
     for tool in "${arch_tools[@]}"; do
-      echo "Installing $tool"
-      $SUDO pacman -S --noconfirm $tool || { echo "Installation of $tool failed"; exit 1; }
+      if ! pacman -Qq $tool &> /dev/null; then
+        echo "Installing $tool"
+        $SUDO pacman -S --noconfirm $tool || { echo "Installation of $tool failed"; exit 1; }
+      else
+        echo "$tool is already installed, skipping..."
+      fi
     done
   else
     echo "Error: No compatible package manager found (apt or pacman)."
