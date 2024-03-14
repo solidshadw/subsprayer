@@ -43,17 +43,19 @@ install_system_tools() {
   section "Installing Additional Packages"
   
   # Define an array of tools to install for Debian-based systems
-  debian_tools=("git" "python3" "python3-pip" "python3-venv" "curl" "wget" "nano" "libcurl4-openssl-dev" "libxml2" "libxml2-dev" "libxslt1-dev" "ruby-dev" "build-essential" "libgmp-dev" "zlib1g-dev" "build-essential" "libssl-dev" "libffi-dev" "python3-dev" "libldns-dev" "jq" "ruby-full" "python3-setuptools" "python3-dnspython" "rename" "findutils" "python3-pip" "python3-requests")
+  debian_tools=("git" "python3" "python3-pip" "python3-venv" "curl" "wget" "nano" "libcurl4-openssl-dev" "libxml2")
 
   # Define an array of tools to install for Arch-based systems
-  arch_tools=("git" "python" "python-pip" "curl" "wget" "nano" "curl" "libxml2" "libxslt" "ruby" "base-devel" "gmp" "zlib" "openssl" "libffi" "python" "argparse" "ldns" "jq" "ruby" "python-setuptools" "python-dnspython" "perl-rename" "findutils" "python-pip" "python-requests")
+  arch_tools=("git" "python" "python-pip" "curl" "wget" "nano" "curl" "libxml2" "libxslt" "ruby" "base-devel" "gmp")
 
-  # Determine the package manager and install the appropriate tools
+  # Define an array to store tools that need to be installed
+  tools_to_install=()
+
+  # Determine the package manager and check if the tools are installed
   if command -v apt &> /dev/null; then
     for tool in "${debian_tools[@]}"; do
       if ! dpkg -l | grep -q "^ii  $tool "; then
-        echo "Installing $tool"
-        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y $tool || { echo "Installation of $tool failed"; exit 1; }
+        tools_to_install+=("$tool")
       else
         echo "$tool is already installed, skipping..."
       fi
@@ -61,8 +63,7 @@ install_system_tools() {
   elif command -v pacman &> /dev/null; then
     for tool in "${arch_tools[@]}"; do
       if ! pacman -Qq $tool &> /dev/null; then
-        echo "Installing $tool"
-        $SUDO pacman -S --noconfirm $tool || { echo "Installation of $tool failed"; exit 1; }
+        tools_to_install+=("$tool")
       else
         echo "$tool is already installed, skipping..."
       fi
@@ -70,6 +71,19 @@ install_system_tools() {
   else
     echo "Error: No compatible package manager found (apt or pacman)."
     exit 1
+  fi
+
+  # Install the tools that need to be installed
+  if [ ${#tools_to_install[@]} -eq 0 ]; then
+    echo "All tools are already installed, skipping bulk installation."
+  else
+    if command -v apt &> /dev/null; then
+      echo "Installing Debian tools: ${tools_to_install[*]}"
+      DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y "${tools_to_install[@]}" || { echo "Installation of one or more tools failed"; exit 1; }
+    elif command -v pacman &> /dev/null; then
+      echo "Installing Arch tools: ${tools_to_install[*]}"
+      $SUDO pacman -S --noconfirm "${tools_to_install[@]}" || { echo "Installation of one or more tools failed"; exit 1; }
+    fi
   fi
 }
 
