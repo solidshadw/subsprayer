@@ -43,10 +43,10 @@ install_system_tools() {
   section "Installing Additional Packages"
   
   # Define an array of tools to install for Debian-based systems
-  debian_tools=("git" "python3" "python3-pip" "python3-venv" "curl" "wget" "nano" "libcurl4-openssl-dev" "libxml2")
+  debian_tools=("git" "python3" "python3-pip" "python3-venv" "curl" "wget" "nano" "libcurl4-openssl-dev" "libxml2" "libxml2-dev" "libxslt1-dev" "ruby-dev" "build-essential" "libgmp-dev" "zlib1g-dev" "build-essential" "libssl-dev" "libffi-dev" "python-dev" "libldns-dev" "jq" "ruby-full" "python3-setuptools" "python3-dnspython" "rename" "findutils" "python3-pip" "python3-requests")
 
   # Define an array of tools to install for Arch-based systems
-  arch_tools=("git" "python" "python-pip" "curl" "wget" "nano" "curl" "libxml2" "libxslt" "ruby" "base-devel" "gmp")
+  arch_tools=("git" "python" "python-pip" "curl" "wget" "nano" "curl" "libxml2" "libxslt" "ruby" "base-devel" "gmp" "zlib" "openssl" "libffi" "python" "argparse" "ldns" "jq" "ruby" "python-setuptools" "python-dnspython" "perl-rename" "findutils" "python-pip" "python-requests")
 
   # Determine the package manager and install the appropriate tools
   if command -v apt &> /dev/null; then
