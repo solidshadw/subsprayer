@@ -1,645 +1,200 @@
 #!/bin/bash
 
-input=$1
+# Color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;96m'
+YELLOW='\033[0;93m'
+NC='\033[0m' # No Color
 
-help() {
+# Global variables
+DATE=$(date +'%Y-%m-%d')
+TOOLS_DIR="$HOME/toolsSubsprayer"
 
-   printf "
-
-\e[32m[\e[0m\e[31musage\e[0m\e[32m]:\e[0m
-
-\e[31m-h\e[0m \e[32m==>\e[0m \e[31mHelp Menue\e[0m
-\e[31m-t\e[0m \e[32m==>\e[0m \e[31mTarget Domain\e[0m
-\e[31m-l\e[0m \e[32m==>\e[0m \e[31mDomains List\e[0m
-\e[31m-w\e[0m \e[32m==>\e[0m \e[31mWordlist\e[0m
-\e[31m-d\e[0m \e[32m==>\e[0m \e[31mKnockpy Deep Mode\e[0m
-\e[31m-f\e[0m \e[32m==>\e[0m \e[31mKnockpy Fast Mode\e[0m
-\e[31m-g\e[0m \e[32m==>\e[0m \e[31mGithub Token\e[0m
-\e[31m-i\e[0m \e[32m==>\e[0m \e[31mIgnore Directory Splitting\e[0m
-
-
-\e[32m[\e[0m\e[31mExplaination\e[0m\e[32m]:\e[0m
-
-\e[32m[\e[0m\e[31m+\e[0m\e[32m]\e[0m \e[36m-h\e[0m \e[32m:\e[0m It Show The Help Menue For You Such As\e[32m:\e[0m \e[36mSyntax\e[0m, \e[36mExamples\e[0m, \e[36mSwitches\e[0m
-\e[32m[\e[0m\e[31m+\e[0m\e[32m]\e[0m \e[36m-t\e[0m \e[32m:\e[0m To Use A Single Target Domain To Gather Subdomains On It \e[32m{\e[0m \e[36mPut The Domain Without http Or https\e[0m \e[32m}\e[0m
-\e[32m[\e[0m\e[31m+\e[0m\e[32m]\e[0m \e[36m-l\e[0m \e[32m:\e[0m To Use A Multible Domains Listed In Text File \e[32m{\e[0m \e[36m Put Every Domain In A Single Line Without http Or https\e[0m \e[32m}\e[0m
-\e[32m[\e[0m\e[31m+\e[0m\e[32m]\e[0m \e[36m-w\e[0m \e[32m:\e[0m To Use A Wordlist For The Tools That Support Enumeration List Based\e[0m \e[32m{\e[0m \e[36mOptionally\e[0m \e[32m}\e[0m
-\e[32m[\e[0m\e[31m+\e[0m\e[32m]\e[0m \e[36m-d\e[0m \e[32m:\e[0m To Use Knockpy In Deep Mode |\e[0m \e[36mSwitch Usage -> -d true or -d True\e[0m
-\e[32m[\e[0m\e[31m+\e[0m\e[32m]\e[0m \e[36m-f\e[0m \e[32m:\e[0m To Use Knockpy In Fast Mode |\e[0m \e[36mSwitch Usage -> -f true or -f True\e[0m
-\e[32m[\e[0m\e[31m+\e[0m\e[32m]\e[0m \e[36m-g\e[0m \e[32m:\e[0m Set Github Token For Gathering Subdomains From Github\e[0m \e[32m{\e[0m \e[36mOptionally\e[0m \e[32m}\e[0m
-\e[32m[\e[0m\e[31m+\e[0m\e[32m]\e[0m \e[36m-i\e[0m \e[32m:\e[0m Ignore directory splitting for every domain in list\e[0m \e[32m{\e[0m \e[36mOnly effective while using a list\e[0m \e[32m} | Switch usage -> -i true or -i True\e[0m
-
-
-\e[32m[\e[0m\e[31mExampels\e[0m\e[32m]:\e[0m
-
-\e[93m=================================================\e[0m
-               Single Domains Based
-\e[93m=================================================\e[0m
-
-\e[37m./subdomainer -t domain.com -f true -g 55aa66bb4aa8mm9mmss334422-weqas -w /usr/share/wordlist/dirbuster/directories.jbrofuzz\e[0m
-
-\e[37m./subdomainer -t domains.com -d true -g 55aa66bb4aa8mm9mmss334422-weqas -w /usr/share/wordlist/dirbuster/directories.jbrofuzz\e[0m
-
-
-\e[93m=================================================\e[0m
-               Domains List Based
-\e[93m=================================================\e[0m
-
-\e[37m./subdomainer -l domains.txt -d true -g 55aa66bb4aa8mm9mmss334422-weqas -w /usr/share/wordlist/dirbuster/directories.jbrofuzz -i\e[0m
-
-\e[37m./subdomainer -l domains.txt -f true -g 55aa66bb4aa8mm9mmss334422-weqas -w /usr/share/wordlist/dirbuster/directories.jbrofuzz\e[0m
-
-
-"
-
+# Print formatted section headers
+print_section() {
+    printf "\n${BLUE}##################################################${NC}"
+    printf "\n   ${BLUE}%s${NC} ${RED}%s${NC}" "$1" "$2"
+    printf "\n${BLUE}##################################################${NC}\n\n"
 }
 
-if [[ -z "${input}" ]]; then
-
-   help
-   exit
-
-fi
-
-while getopts "i:g:t:f:w:l:d:h" option; do
-   case $option in
-   h)
-
-      help
-
-      exit
-      ;;
-
-   d)
-
-      deep=$OPTARG
-      ;;
-
-   l)
-
-      list=$OPTARG
-      ;;
-
-   w)
-
-      wordlist=$OPTARG
-      ;;
-
-   f)
-
-      fast=$OPTARG
-      ;;
-
-   t)
-
-      domains=$OPTARG
-      ;;
-
-   g)
-
-      gitoken=$OPTARG
-      ;;
-
-   i)
-
-      ignore=$OPTARG
-      ;;
-
-   esac
-
-done
-
-subf() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mSubfinder Is Working On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   subfinder -d $domains -o "$domains/$date/$domains-subfinder.txt"
-
+# Error handling function
+handle_error() {
+    printf "\n${RED}Error: $1${NC}\n"
 }
 
-sublist() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mSublist3r Is Working On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-
-"
-
-   python3 $HOME/toolsSubsprayer/Sublist3r/sublist3r.py -d $domains -v -o "$domains/$date/$domains-sublist3r.txt"
-
+# Validate domain format
+validate_domain() {
+    local domain=$1
+    if [[ ! $domain =~ ^[a-zA-Z0-9][a-zA-Z0-9-]+\.[a-zA-Z]{2,}$ ]]; then
+        handle_error "Invalid domain format: $domain"
+    fi
 }
 
-gobus() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mGobuster Is Working On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   gobuster dns -d $domains -w $wordlist -o $domains/$date/$domains-gobuster.txt
-
+# Create output directory structure
+setup_output_dir() {
+    local domain=$1
+    local target="resultSubsprayer/$domain/$DATE"
+    mkdir -p "$target" || handle_error "Could not create output directory"
 }
 
-ams() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mAmass Is Working On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   amass enum -passive -norecursive -d $domains -o $domains/$date/$domains-amass-enum.txt
-
-   printf "
-
-\e[93m=================================================\e[0m
-            \e[37mSwitching To intel Module\e[0m
-\e[93m=================================================\e[0m
-
-"
-
-   amass intel -whois -d $domains -o $domains/$date/$domains-amass-intel.txt
-
+# Run subfinder
+run_subfinder() {
+    local domain=$1
+    local output_dir="resultSubsprayer/$domain/$DATE"
+    
+    print_section "Subfinder" "$domain"
+    subfinder -d "$domain" -o "$output_dir/$domain-subfinder.txt" || \
+        handle_error "Subfinder failed"
 }
 
-knockDeep() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mKnockpy Is Working On\e[0m \e[31m$domains\e[0m
-            \e[91m[Deep Mode Activated]\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   mkdir -p $domains/$date/knockpy-deep/
-   chmod 777 $domains/$date/knockpy-deep/
-   python3 $HOME/toolsSubsprayer/knock/knock/knockpy.py $domains -o $domains/$date/knockpy-deep/
+# Run sublist3r
+run_sublist3r() {
+    local domain=$1
+    local output_dir="resultSubsprayer/$domain/$DATE"
+    
+    print_section "Sublist3r" "$domain"
+    python3 "$TOOLS_DIR/Sublist3r/sublist3r.py" -d "$domain" -v \
+        -o "$output_dir/$domain-sublist3r.txt" || handle_error "Sublist3r failed"
 }
 
-knockFast() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mKnockpy Is Working On\e[0m \e[31m$domains\e[0m
-            \e[91m[Fast Mode Activated]\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   mkdir -p $domains/$date/knockpy-fast/
-   chmod 777 $domains/$date/knockpy-fast/
-   python3 $HOME/toolsSubsprayer/knock/knock/knockpy.py $domains --no-http -o $domains/$date/knockpy-fast/
+# Run amass
+run_amass() {
+    local domain=$1
+    local output_dir="resultSubsprayer/$domain/$DATE"
+    
+    print_section "Amass Passive Scan" "$domain"
+    amass enum -passive -norecursive -d "$domain" -o "$output_dir/$domain-amass-enum.txt" || handle_error "Amass enum failed"
+    
+    print_section "Amass Intel Scan" "$domain"
+    amass intel -whois -d "$domain" -o "$output_dir/$domain-amass-intel.txt" || handle_error "Amass intel failed"
 }
 
-crt() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mCRTsh Is Working On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   python3 $HOME/toolsSubsprayer/crtsh/crtsh.py -d $domains | tee $domains/$date/$domains-crtsh.txt
+run_crtsh() {
+    local domain=$1
+    local output_dir="resultSubsprayer/$domain/$DATE"
+    
+    print_section "Crtsh" "$domain"
+    python3 "$TOOLS_DIR/crtsh/crtsh.py" -d "$domain" | tee "$output_dir/$domain-crtsh.txt" || handle_error "Crtsh failed"
 }
 
-date=$(date +'%m-%d-%Y')
-
-if [[ -z "${domains}" ]]; then
-
-   :
-
-else
-
-   mkdir -p $domains
-   mkdir -p $domains/$date
-
-   subf
-   sublist
-   ams
-
-   if [[ $wordlist ]]; then
-
-      gobus
-
-   fi
-
-   if [[ $gitoken ]]; then
-
-      printf "
-
-\e[96m##################################################\e[0m
-   \e[96mGitsearch Is Working On\e[0m \e[31m$domains\e[0m
-         \e[91m[Gitsubdomains Mode Activated]\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-      python3 $HOME/toolsSubsprayer/github-search/github-subdomains.py -d $domains -t $gitoken -v | tee $domains/$date/githubsubs.txt
-
-   fi
-
-   if [[ $fast == "true" ]]; then
-
-      knockFast
-
-   elif [[ $fast == "True" ]]; then
-
-      knockFast
-
-   elif [[ $deep == "true" ]]; then
-
-      knockDeep
-
-   elif [[ $deep == "True" ]]; then
-
-      knockDeep
-
-   fi
-
-   cd $domains/$date/
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mSorting Unique Subs On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   cat *.txt | sort -u | grep -i $domains | tee all.txt
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mHttpx Is Working On \e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   cat *.txt | httpx -ports 80,443,8080,8000,8081,8008,8888,8443,9000,9001,9090 | sort -u | grep -i $domains | tee all-live.txt
-
-   cd ../../
-
-   printf "\n\n\e[92m=============================================\e[0m"
-   printf "\n\n\e[92m   🌩️  Application shocked successfully 🌩️               \e[0m"
-   printf "\n\n\e[92m                Stay secure ;)               \e[0m"
-   printf "\n\n\e[92m      \e[5mJob finsihed in \e[91m$domains\e[0m\e[25m               \e[0m"
-   printf "\n\n\e[92m=============================================\e[0m\n\n"
-
-   exit
-
-fi
-
-crtIgnore() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mCRTsh Is Working On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   python3 $HOME/toolsSubsprayer/crtsh/crtsh.py crtsh -d $domains | tee "result/$date/$domains-crtsh.txt"
+# Run gobuster
+run_gobuster() {
+    local domain=$1
+    local wordlist=$2
+    local output_dir="resultSubsprayer/$domain/$DATE"
+    
+    print_section "Gobuster" "$domain"
+    gobuster dns -d "$domain" -w "$wordlist" -t 30 -o "$output_dir/$domain-gobuster.txt" || handle_error "Gobuster failed"
 }
 
-subfIgnore() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mSubfinder Is Working On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   subfinder -d $domains -o "result/$date/$domains-subfinder.txt"
-
+# Run github subdomain search
+run_github_search() {
+    local domain=$1
+    local token=$2
+    local output_dir="resultSubsprayer/$domain/$DATE"
+    
+    print_section "Github Subdomain Search" "$domain"
+    python3 "$TOOLS_DIR/github-search/github-subdomains.py" \
+        -d "$domain" -t "$token" -v | tee "$output_dir/$domain-github.txt" || \
+        handle_error "Github search failed"
+}
+# Process results
+process_results() {
+    local domain=$1
+    local output_dir="resultSubsprayer/$domain/$DATE"
+    
+    cd "$output_dir" || handle_error "Could not change to output directory"
+    
+    print_section "Processing Results" "$domain"
+    
+    # Combine and sort unique subdomains
+    cat *.txt 2>/dev/null | sort -u | grep -i "$domain" > "all-subdomains.txt"
+    
+    # Check for live hosts
+    print_section "Checking Live Hosts" "$domain"
+    cat all-subdomains.txt | httpx -silent -ports 80,443,8080,8000,8081,8008,8888,8443,9000,9001,9090 \
+        -title -status-code -content-length | sort -u > "live-hosts.txt"
+    
+    cd - >/dev/null || handle_error "Could not return to previous directory"
 }
 
-sublistIgnore() {
+# Display help menu
+show_help() {
+    printf "
+[${GREEN}Usage${NC}]:
 
-   printf "
+${RED}-h${NC}  =>  Help Menu
+${RED}-t${NC}  =>  Target Domain
+${RED}-l${NC}  =>  Domains List
+${RED}-w${NC}  =>  Wordlist
+${RED}-g${NC}  =>  Github Token
 
-\e[96m##################################################\e[0m
-   \e[96mSublist3r Is Working On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
+[${GREEN}Examples${NC}]:
 
+${YELLOW}Single Domain:${NC}
+./subsprayer.sh -t example.com -w /path/to/wordlist -g GITHUB_TOKEN
 
+${YELLOW}Multiple Domains:${NC}
+./subsprayer.sh -l domains.txt -w /path/to/wordlist -g GITHUB_TOKEN
 "
-
-   python3 $HOME/toolsSubsprayer/Sublist3r/sublist3r.py -d $domains -v -o "result/$date/$domains-sublist3r.txt"
-
 }
 
-gobusIgnore() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mGobuster Is Working On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   gobuster dns -d $domains -w $wordlist -o "result/$date/$domains-gobuster.txt"
-
+# Main execution function
+main() {
+    local domain wordlist token domains_file
+    
+    # Parse command line arguments
+    while getopts "h:t:l:w:g:" opt; do
+        case $opt in
+            h) show_help; exit 0 ;;
+            t) domain="$OPTARG" ;;
+            l) domains_file="$OPTARG" ;;
+            w) wordlist="$OPTARG" ;;
+            g) token="$OPTARG" ;;
+            *) show_help; exit 1 ;;
+        esac
+    done
+    
+    # Validate inputs
+    if [[ -z $domain && -z $domains_file ]]; then
+        show_help
+        exit 1
+    fi
+    
+    # Process single domain
+    if [[ -n $domain ]]; then
+        validate_domain "$domain"
+        setup_output_dir "$domain"
+        run_subfinder "$domain" "$domain"
+        run_sublist3r "$domain" "$domain"
+        run_amass "$domain" "$domain"
+        run_crtsh "$domain" "$domain"
+        [[ -n $wordlist ]] && run_gobuster "$domain" "$wordlist" "$domain"
+        [[ -n $token ]] && run_github_search "$domain" "$token" "$domain"
+        process_results "$domain" "$domain"
+    fi
+    
+    # Process domain list
+    if [[ -n $domains_file ]]; then
+        while IFS= read -r domain || [[ -n "$domain" ]]; do
+            domain=$(echo "$domain" | tr -d '[:space:]')
+            [[ -z $domain ]] && continue
+            
+            validate_domain "$domain"
+            setup_output_dir "$domain"
+            run_subfinder "$domain" "$domain"
+            run_sublist3r "$domain" "$domain"
+            run_amass "$domain" "$domain"
+            run_crtsh "$domain" "$domain"
+            [[ -n $wordlist ]] && run_gobuster "$domain" "$wordlist" "$domain"
+            [[ -n $token ]] && run_github_search "$domain" "$token" "$domain"
+            process_results "$domain" "$domain"
+        done < "$domains_file"
+    fi
+    
+    printf "\n${GREEN}Subdomain enumeration completed successfully!${NC}\n"
 }
 
-amsIgnore() {
-
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mAmass Is Working On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   amass enum -passive -norecursive -noalts -d "$domains -o result/$date/$domains-amass-enum.txt"
-
-   printf "
-
-\e[93m=================================================\e[0m
-            \e[37mSwitching To intel Module\e[0m
-\e[93m=================================================\e[0m
-
-"
-
-   amass intel -whois -d $domains -o "result/$date/$domains-amass-intel.txt"
-
-}
-
-knockFastIgnore() {
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mKnockpy Is Working On\e[0m \e[31m$domains\e[0m
-            \e[91m[Fast Mode Activated]\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   mkdir -p result/$date/$domains-knockpy-fast/
-   chmod 777 result/$date/$domains-knockpy-fast/
-   python3 $HOME/toolsSubsprayer/knock/knock/knockpy.py $domains --no-http -o result/$date/$domains-knockpy-fast/
-
-}
-
-knockDeepIgnore() {
-   printf "
-
-\e[96m##################################################\e[0m
-   \e[96mKnockpy Is Working On\e[0m \e[31m$domains\e[0m
-            \e[91m[Deep Mode Activated]\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-   mkdir -p result/$date/$domains-knockpy-deep/
-   chmod 777 result/$date/$domains-knockpy-deep/
-   python3 $HOME/toolsSubsprayer/knock/knock/knockpy.py$domains -o result/$date/$domains-knockpy-deep/
-
-}
-
-if [[ -z "${list}" ]]; then
-
-   :
-
-else
-
-   if [[ $ignore == "true" ]]; then
-
-      for domains in $(cat $list); do
-
-         mkdir -p result/$date
-
-         subfIgnore
-         sublistIgnore
-         gobusIgnore
-         amsIgnore
-         crtIgnore
-
-         if [[ $fast == "true" ]]; then
-
-            knockFastIgnore
-
-         elif [[ $fast == "True" ]]; then
-
-            knockFastIgnore
-
-         elif [[ $deep == "true" ]]; then
-
-            knockDeepIgnore
-
-         elif [[ $deep == "True" ]]; then
-
-            knockDeepIgnore
-
-         fi
-
-         cd result/$date/
-
-         printf "
-
-\e[96m##################################################\e[0m
-   \e[96mSorting Unique Subs On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-         cat *.txt | sort -u | grep -i $domains | tee all.txt
-
-         printf "
-
-\e[96m##################################################\e[0m
-   \e[96mHttpx Is Working On \e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-         cat *.txt | httpx -ports -status-code -title 80,443,8080,8000,8081,8008,8888,8443,9000,9001,9090 | sort -u | grep -i $domains | tee all-live.txt
-
-         cd ../../
-
-      done
-
-      printf "\n\n\e[92m=============================================\e[0m"
-      printf "\n\n\e[92m    🌩️  Application shocked successfully 🌩️               \e[0m"
-      printf "\n\n\e[92m                 Stay secure ;)               \e[0m"
-      printf "\n\n\e[92m            \e[5mJob finsihed in \e[91m$list\e[0m\e[25m               \e[0m"
-      printf "\n\n\e[92m=============================================\e[0m\n\n"
-
-      exit
-
-   elif [[ $ignore == "True" ]]; then
-
-      for domains in $(cat $list); do
-
-         mkdir -p result/$date
-
-         subfIgnore
-         sublistIgnore
-         gobusIgnore
-         amsIgnore
-         crtIgnore
-
-         if [[ $fast == "true" ]]; then
-
-            knockFastIgnore
-
-         elif [[ $fast == "True" ]]; then
-
-            knockFastIgnore
-
-         elif [[ $deep == "true" ]]; then
-
-            knockDeepIgnore
-
-         elif [[ $deep == "True" ]]; then
-
-            knockDeepIgnore
-
-         fi
-
-         cd result/$date/
-
-         printf "
-
-\e[96m##################################################\e[0m
-   \e[96mSorting Unique Subs On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-         cat *.txt | sort -u | grep -i $domains | tee all.txt
-
-         printf "
-
-\e[96m##################################################\e[0m
-   \e[96mHttpx Is Working On \e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-         cat *.txt | httpx -ports -status-code -title 80,443,8080,8000,8081,8008,8888,8443,9000,9001,9090 | sort -u | grep -i $domains | tee all-live.txt
-
-         cd ../../
-
-      done
-
-      printf "\n\n\e[92m=============================================\e[0m"
-      printf "\n\n\e[92m    🌩️  Application shocked successfully 🌩️               \e[0m"
-      printf "\n\n\e[92m                 Stay secure ;)               \e[0m"
-      printf "\n\n\e[92m          \e[5mJob finsihed in \e[91m$domains\e[0m\e[25m               \e[0m"
-      printf "\n\n\e[92m=============================================\e[0m\n\n"
-
-      exit
-
-   else
-
-      for domains in $(cat $list); do
-
-         mkdir -p $domains
-         mkdir -p $domains/$date
-
-         subf
-         sublist
-         ams
-         crt
-
-         if [[ $wordlist ]]; then
-
-            gobus
-
-         fi
-
-         if [[ $gitoken ]]; then
-
-            printf "
-
-\e[96m##################################################\e[0m
-   \e[96mGitsearch Is Working On\e[0m \e[31m$domains\e[0m
-         \e[91m[Gitsubdomains Mode Activated]\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-            python3 $HOME/toolsSubsprayer/github-search/github-subdomains.py -d $domains -t $gitoken -v | tee $domains/$date/githubsubs.txt
-
-         fi
-
-         cd $domains/$date/
-
-         printf "
-
-\e[96m##################################################\e[0m
-   \e[96mSorting Unique Subs On\e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-         cat *.txt | sort -u | grep -i $domains | tee all.txt
-
-         printf "
-
-\e[96m##################################################\e[0m
-   \e[96mHttpx Is Working On \e[0m \e[31m$domains\e[0m
-\e[96m##################################################\e[0m
-
-"
-
-         cat *.txt | httpx -title -content-length -status-code -ports 80,443,8080,8000,8081,8008,8888,8443,9000,9001,9090 | sort -u | grep -i $domains | tee all-live.txt
-
-         cd ../../
-
-         if [[ $fast == "true" ]]; then
-
-            knockFast
-
-         elif [[ $fast == "True" ]]; then
-
-            knockFast
-
-         elif [[ $deep == "true" ]]; then
-
-            knockDeep
-
-         elif [[ $deep == "True" ]]; then
-
-            knockDeep
-
-         fi
-
-      done
-
-      exit
-
-      printf "\n\n\e[92m=============================================\e[0m"
-      printf "\n\n\e[92m   🌩️  Applications shocked successfully 🌩️               \e[0m"
-      printf "\n\n\e[92m                Stay secure ;)               \e[0m"
-      printf "\n\n\e[92m        \e[5mJob finsihed in \e[91m$list\e[0m\e[25m               \e[0m"
-      printf "\n\n\e[92m=============================================\e[0m\n\n"
-
-   fi
-
-fi
+# Execute main function
+main "$@"

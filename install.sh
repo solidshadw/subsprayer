@@ -48,8 +48,8 @@ update_repos() {
 install_system_tools() {
   section "Installing Additional Packages"
   
-  debian_tools=("git" "python3" "python3-pip" "python3-venv" "curl" "wget" "nano" "libcurl4-openssl-dev" "libxml2" "libxml2-dev" "libxslt1-dev" "ruby-dev" "build-essential" "libgmp-dev" "zlib1g-dev" "libssl-dev" "libffi-dev" "python3-dev" "libldns-dev" "jq" "ruby-full" "python3-setuptools" "python3-dnspython" "rename" "findutils" "python3-requests")
-  arch_tools=("git" "python" "python-pip" "curl" "wget" "nano" "libxml2" "libxslt" "ruby" "base-devel" "gmp" "zlib" "openssl" "libffi" "argparse" "ldns" "jq" "python-setuptools" "python-dnspython" "perl-rename" "findutils" "python-requests")
+  debian_tools=("git" "make" "python3" "python3-pip" "python3-venv" "curl" "wget" "nano" "libcurl4-openssl-dev" "libxml2" "libxml2-dev" "libxslt1-dev" "ruby-dev" "build-essential" "libgmp-dev" "zlib1g-dev" "libssl-dev" "libffi-dev" "python3-dev" "libldns-dev" "jq" "ruby-full" "python3-setuptools" "python3-dnspython" "rename" "findutils" "python3-requests")
+  arch_tools=("git" "make" "python" "python-pip" "curl" "wget" "nano" "libxml2" "libxslt" "ruby" "base-devel" "gmp" "zlib" "openssl" "libffi" "argparse" "ldns" "jq" "python-setuptools" "python-dnspython" "perl-rename" "findutils" "python-requests")
 
   tools_to_install=()
 
@@ -146,6 +146,7 @@ install_go_tool() {
   section "Installing $tool_name"
   if ! command -v "$tool_name" &> /dev/null; then
     if go install "$repo_url"@latest &>/dev/null; then
+
       $SUDO cp "$HOME/go/bin/$tool_name" "/usr/local/bin/$tool_name"
       echo -e "${GREEN}$tool_name installed successfully${NC}"
     else
@@ -162,8 +163,7 @@ install_httpx() { install_go_tool "httpx" "github.com/projectdiscovery/httpx/cmd
 install_gobuster() { install_go_tool "gobuster" "github.com/OJ/gobuster/v3"; }
 install_github_search() { install_python_tool "github-search" "https://github.com/gwen001/github-search.git"; }
 install_subfinder() { install_go_tool "subfinder" "github.com/projectdiscovery/subfinder/v2/cmd/subfinder"; }
-install_amass() { install_go_tool "amass" "github.com/owasp-amass/amass/v4/...@latest"; }
-install_knockpy() { install_python_tool "knock" "https://github.com/guelfoweb/knock.git"; }
+install_amass() { install_go_tool "amass" "github.com/owasp-amass/amass/v4/..."@master; }
 
 # Install crtsh
 install_crtsh() {
@@ -173,6 +173,18 @@ install_crtsh() {
     echo -e "${GREEN}crtsh installed successfully${NC}"
   else
     echo "crtsh is already installed"
+  fi
+}
+
+# Download wordlists
+download_wordlists() {
+  section "Downloading Assetnote DNS Wordlist"
+  if [ ! -f "$HOME/toolsSubsprayer/best-dns-wordlist.txt" ]; then
+    wget https://wordlists-cdn.assetnote.io/data/manual/best-dns-wordlist.txt -O $HOME/toolsSubsprayer/best-dns-wordlist.txt
+    echo -e "${GREEN}best-dns-wordlist.txt downloaded successfully${NC}"
+    echo "You can find it in $HOME/toolsSubsprayer/best-dns-wordlist.txt and use it as a wordlist"
+  else
+    echo "best-dns-wordlist.txt already exists"
   fi
 }
 
@@ -189,3 +201,5 @@ install_github_search
 install_subfinder
 install_knockpy
 install_crtsh
+install_shuffledns
+download_wordlists
