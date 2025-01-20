@@ -113,7 +113,7 @@ process_results() {
     
     # Check for live hosts
     print_section "Checking Live Hosts" "$domain"
-    cat all-subdomains.txt | ~/go/bin/httpx -silent -ports 80,443,8080,8000,8081,8008,8888,8443,9000,9001,9090 \
+    cat all-subdomains.txt | ~/go/bin/httpx -silent -fr -ports 80,443,8080,8000,8081,8008,8888,8443,9000,9001,9090 \
         -title -status-code -content-length | sort -u > "live-hosts.txt"
     
     cd - >/dev/null || handle_error "Could not return to previous directory"
