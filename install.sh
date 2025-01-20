@@ -199,7 +199,5 @@ install_amass
 install_gobuster
 install_github_search
 install_subfinder
-install_knockpy
 install_crtsh
-install_shuffledns
 download_wordlists
