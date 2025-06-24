@@ -44,7 +44,7 @@ run_subfinder() {
     local output_dir="resultSubsprayer/$domain/$DATE"
     
     print_section "Subfinder" "$domain"
-    subfinder -d "$domain" -o "$output_dir/$domain-subfinder.txt" || \
+    ~/go/bin/subfinder -d "$domain" -o "$output_dir/$domain-subfinder.txt" || \
         handle_error "Subfinder failed"
 }
 
@@ -54,8 +54,10 @@ run_sublist3r() {
     local output_dir="resultSubsprayer/$domain/$DATE"
     
     print_section "Sublist3r" "$domain"
+    source "$TOOLS_DIR/Sublist3r/venv/bin/activate"
     python3 "$TOOLS_DIR/Sublist3r/sublist3r.py" -d "$domain" -v \
         -o "$output_dir/$domain-sublist3r.txt" || handle_error "Sublist3r failed"
+    deactivate
 }
 
 # Run amass
@@ -64,10 +66,10 @@ run_amass() {
     local output_dir="resultSubsprayer/$domain/$DATE"
     
     print_section "Amass Passive Scan" "$domain"
-    amass enum -passive -norecursive -d "$domain" -o "$output_dir/$domain-amass-enum.txt" || handle_error "Amass enum failed"
+    ~/go/bin/amass enum -passive -norecursive -d "$domain" -o "$output_dir/$domain-amass-enum.txt" || handle_error "Amass enum failed"
     
     print_section "Amass Intel Scan" "$domain"
-    amass intel -whois -d "$domain" -o "$output_dir/$domain-amass-intel.txt" || handle_error "Amass intel failed"
+    ~/go/bin/amass intel -whois -d "$domain" -o "$output_dir/$domain-amass-intel.txt" || handle_error "Amass intel failed"
 }
 
 run_crtsh() {
@@ -75,7 +77,9 @@ run_crtsh() {
     local output_dir="resultSubsprayer/$domain/$DATE"
     
     print_section "Crtsh" "$domain"
+    source "$TOOLS_DIR/crtsh/venv/bin/activate"
     python3 "$TOOLS_DIR/crtsh/crtsh.py" -d "$domain" | tee "$output_dir/$domain-crtsh.txt" || handle_error "Crtsh failed"
+    deactivate
 }
 
 # Run gobuster
@@ -85,7 +89,7 @@ run_gobuster() {
     local output_dir="resultSubsprayer/$domain/$DATE"
     
     print_section "Gobuster" "$domain"
-    gobuster dns -d "$domain" -w "$wordlist" -t 30 -o "$output_dir/$domain-gobuster.txt" || handle_error "Gobuster failed"
+    ~/go/bin/gobuster dns -d "$domain" -w "$wordlist" -t 30 -o "$output_dir/$domain-gobuster.txt" || handle_error "Gobuster failed"
 }
 
 # Run github subdomain search
@@ -95,10 +99,13 @@ run_github_search() {
     local output_dir="resultSubsprayer/$domain/$DATE"
     
     print_section "Github Subdomain Search" "$domain"
+    source "$TOOLS_DIR/github-search/venv/bin/activate"
     python3 "$TOOLS_DIR/github-search/github-subdomains.py" \
         -d "$domain" -t "$token" -v | tee "$output_dir/$domain-github.txt" || \
         handle_error "Github search failed"
+    deactivate
 }
+
 # Process results
 process_results() {
     local domain=$1
@@ -114,7 +121,8 @@ process_results() {
     # Check for live hosts
     print_section "Checking Live Hosts" "$domain"
     cat all-subdomains.txt | ~/go/bin/httpx -silent -fr -ports 80,443,8080,8000,8081,8008,8888,8443,9000,9001,9090 \
-        -title -status-code -content-length | sort -u > "live-hosts.txt"
+        -title -status-code -content-length -nc -threads 100 | sort -u > "live-hosts.txt"
+    awk '{print $1}' live-hosts.txt | sort -u > "live-hosts-clean.txt"
     
     cd - >/dev/null || handle_error "Could not return to previous directory"
 }
