@@ -196,28 +196,37 @@ install_sublist3r() {
     git clone "https://github.com/aboul3la/Sublist3r.git" "$HOME/toolsSubsprayer/Sublist3r" &>/dev/null
     cd "$HOME/toolsSubsprayer/Sublist3r" || { echo "Error: Unable to change to Sublist3r directory."; exit 1; }
     python3 -m venv venv &>/dev/null
-    source venv/bin/activate
+    # Use venv python directly
+    venv_python="$HOME/toolsSubsprayer/Sublist3r/venv/bin/python3"
     if [ -f "requirements.txt" ]; then
-      pip3 install -r requirements.txt &>/dev/null
+      "$venv_python" -m pip install -q -r requirements.txt &>/dev/null
     fi
     # Install common dependencies that might be missing
-    pip3 install requests dnspython argparse &>/dev/null
-    deactivate
+    "$venv_python" -m pip install -q requests dnspython argparse &>/dev/null
     cd "$HOME/toolsSubsprayer" || { echo "Error: Unable to return to the parent directory."; exit 1; }
     echo -e "${GREEN}Sublist3r installed successfully${NC}"
   else
     echo "Sublist3r is already installed"
     # Check if virtual environment exists and has required packages
     if [ -d "$HOME/toolsSubsprayer/Sublist3r/venv" ]; then
-      cd "$HOME/toolsSubsprayer/Sublist3r" || { echo "Error: Unable to change to Sublist3r directory."; exit 1; }
-      source venv/bin/activate
-      python3 -c "import requests, dnspython, argparse" &>/dev/null
-      if [ $? -ne 0 ]; then
-        echo "Installing missing Python packages for Sublist3r..."
-        pip3 install requests dnspython argparse &>/dev/null
+      venv_python="$HOME/toolsSubsprayer/Sublist3r/venv/bin/python3"
+      if [ -f "$venv_python" ]; then
+        "$venv_python" -c "import requests; import dns.resolver; import argparse" &>/dev/null
+        if [ $? -ne 0 ]; then
+          echo "Installing missing Python packages for Sublist3r..."
+          "$venv_python" -m pip install -q requests dnspython argparse &>/dev/null
+        fi
+      else
+        echo "Recreating Sublist3r venv..."
+        cd "$HOME/toolsSubsprayer/Sublist3r" || { echo "Error: Unable to change to Sublist3r directory."; exit 1; }
+        python3 -m venv venv &>/dev/null
+        venv_python="$HOME/toolsSubsprayer/Sublist3r/venv/bin/python3"
+        "$venv_python" -m pip install -q requests dnspython argparse &>/dev/null
+        if [ -f "requirements.txt" ]; then
+          "$venv_python" -m pip install -q -r requirements.txt &>/dev/null
+        fi
+        cd "$HOME/toolsSubsprayer" || { echo "Error: Unable to return to the parent directory."; exit 1; }
       fi
-      deactivate
-      cd "$HOME/toolsSubsprayer" || { echo "Error: Unable to return to the parent directory."; exit 1; }
     fi
   fi
 }
@@ -280,28 +289,37 @@ install_github_search() {
     git clone "https://github.com/gwen001/github-search.git" "$HOME/toolsSubsprayer/github-search" &>/dev/null
     cd "$HOME/toolsSubsprayer/github-search" || { echo "Error: Unable to change to github-search directory."; exit 1; }
     python3 -m venv venv &>/dev/null
-    source venv/bin/activate
+    # Use venv python directly
+    venv_python="$HOME/toolsSubsprayer/github-search/venv/bin/python3"
     if [ -f "requirements.txt" ]; then
-      pip3 install -r requirements.txt &>/dev/null
+      "$venv_python" -m pip install -q -r requirements.txt &>/dev/null
     fi
     # Install common dependencies that might be missing
-    pip3 install requests dnspython argparse &>/dev/null
-    deactivate
+    "$venv_python" -m pip install -q requests dnspython argparse colored &>/dev/null
     cd "$HOME/toolsSubsprayer" || { echo "Error: Unable to return to the parent directory."; exit 1; }
     echo -e "${GREEN}github-search installed successfully${NC}"
   else
     echo "github-search is already installed"
     # Check if virtual environment exists and has required packages
     if [ -d "$HOME/toolsSubsprayer/github-search/venv" ]; then
-      cd "$HOME/toolsSubsprayer/github-search" || { echo "Error: Unable to change to github-search directory."; exit 1; }
-      source venv/bin/activate
-      python3 -c "import requests, dnspython, argparse" &>/dev/null
-      if [ $? -ne 0 ]; then
-        echo "Installing missing Python packages for github-search..."
-        pip3 install requests dnspython argparse &>/dev/null
+      venv_python="$HOME/toolsSubsprayer/github-search/venv/bin/python3"
+      if [ -f "$venv_python" ]; then
+        "$venv_python" -c "import requests; import colored; import argparse" &>/dev/null
+        if [ $? -ne 0 ]; then
+          echo "Installing missing Python packages for github-search..."
+          "$venv_python" -m pip install -q requests dnspython argparse colored &>/dev/null
+        fi
+      else
+        echo "Recreating github-search venv..."
+        cd "$HOME/toolsSubsprayer/github-search" || { echo "Error: Unable to change to github-search directory."; exit 1; }
+        python3 -m venv venv &>/dev/null
+        venv_python="$HOME/toolsSubsprayer/github-search/venv/bin/python3"
+        "$venv_python" -m pip install -q requests dnspython argparse colored &>/dev/null
+        if [ -f "requirements.txt" ]; then
+          "$venv_python" -m pip install -q -r requirements.txt &>/dev/null
+        fi
+        cd "$HOME/toolsSubsprayer" || { echo "Error: Unable to return to the parent directory."; exit 1; }
       fi
-      deactivate
-      cd "$HOME/toolsSubsprayer" || { echo "Error: Unable to return to the parent directory."; exit 1; }
     fi
   fi
 }
@@ -317,9 +335,8 @@ install_crtsh() {
     
     # Create virtual environment and install required packages
     python3 -m venv venv &>/dev/null
-    source venv/bin/activate
-    pip3 install requests argparse &>/dev/null
-    deactivate
+    venv_python="$HOME/toolsSubsprayer/crtsh/venv/bin/python3"
+    "$venv_python" -m pip install -q requests argparse &>/dev/null
     
     cd "$HOME/toolsSubsprayer" || { echo "Error: Unable to return to the parent directory."; exit 1; }
     echo -e "${GREEN}crtsh installed successfully${NC}"
@@ -327,15 +344,21 @@ install_crtsh() {
     echo "crtsh is already installed"
     # Check if virtual environment exists and has required packages
     if [ -d "$HOME/toolsSubsprayer/crtsh/venv" ]; then
-      cd "$HOME/toolsSubsprayer/crtsh" || { echo "Error: Unable to change to crtsh directory."; exit 1; }
-      source venv/bin/activate
-      python3 -c "import requests, argparse" &>/dev/null
-      if [ $? -ne 0 ]; then
-        echo "Installing missing Python packages for crtsh..."
-        pip3 install requests argparse &>/dev/null
+      venv_python="$HOME/toolsSubsprayer/crtsh/venv/bin/python3"
+      if [ -f "$venv_python" ]; then
+        "$venv_python" -c "import requests, argparse" &>/dev/null
+        if [ $? -ne 0 ]; then
+          echo "Installing missing Python packages for crtsh..."
+          "$venv_python" -m pip install -q requests argparse &>/dev/null
+        fi
+      else
+        echo "Recreating crtsh venv..."
+        cd "$HOME/toolsSubsprayer/crtsh" || { echo "Error: Unable to change to crtsh directory."; exit 1; }
+        python3 -m venv venv &>/dev/null
+        venv_python="$HOME/toolsSubsprayer/crtsh/venv/bin/python3"
+        "$venv_python" -m pip install -q requests argparse &>/dev/null
+        cd "$HOME/toolsSubsprayer" || { echo "Error: Unable to return to the parent directory."; exit 1; }
       fi
-      deactivate
-      cd "$HOME/toolsSubsprayer" || { echo "Error: Unable to return to the parent directory."; exit 1; }
     fi
   fi
 }

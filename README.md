@@ -19,8 +19,7 @@ A comprehensive subdomain enumeration tool that combines multiple techniques to 
 
 - **Cross-Platform Support:**
   - macOS (with Homebrew)
-  - Linux (Debian/Ubuntu)
-  - Linux (Arch)
+  - Linux (Debian/Ubuntu/Arch)
 
 ## Installation
 
@@ -98,6 +97,7 @@ resultSubsprayer/
     └── YYYY-MM-DD/
         ├── all-subdomains.txt      # Combined unique subdomains
         ├── live-hosts.txt          # Live hosts with HTTP details
+        ├── live-hosts-clean.txt    # Clean list of live host URLs
         ├── domain-subfinder.txt    # Subfinder results
         ├── domain-sublist3r.txt    # Sublist3r results
         ├── domain-crtsh.txt        # Certificate transparency results
@@ -130,6 +130,20 @@ For enhanced subdomain discovery, you can use a GitHub token:
 2. Generate a new token with appropriate permissions
 3. Use the token with the `-g` parameter
 
+### GitHub Rate Limiting
+
+GitHub API has rate limits:
+- **Unauthenticated**: 10 requests/minute
+- **Authenticated**: 30 requests/minute (with personal access token)
+- **GitHub Apps**: Higher limits available
+
+**Tips to avoid rate limiting:**
+- The script automatically adds delays before GitHub searches
+- When processing multiple domains, the script adds 10-second delays between domains
+- If you get rate limited, wait a few minutes before running again
+- Consider using multiple tokens or a GitHub App for higher limits
+- Rate limit errors are detected and partial results are saved
+
 ## Troubleshooting
 
 ### macOS Issues
@@ -149,6 +163,58 @@ For enhanced subdomain discovery, you can use a GitHub token:
    export PATH=$PATH:$HOME/go/bin
    ```
 
+### Python Dependency Issues
+
+If you encounter `ModuleNotFoundError` for Python tools:
+
+**Quick Fix (Recommended):**
+```bash
+./fix_dependencies.sh
+```
+
+This script will automatically fix all Python dependencies for Sublist3r, GitHub search, and Crtsh.
+
+**Manual Fix:**
+1. **Sublist3r missing `dns` module:**
+   ```bash
+   cd $HOME/toolsSubsprayer/Sublist3r
+   source venv/bin/activate
+   pip3 install dnspython
+   deactivate
+   ```
+
+2. **GitHub search missing `colored` module:**
+   ```bash
+   cd $HOME/toolsSubsprayer/github-search
+   source venv/bin/activate
+   pip3 install colored
+   deactivate
+   ```
+
+3. **Re-run install script to fix all dependencies:**
+   ```bash
+   ./install.sh
+   ```
+
+### Updating Tools
+
+**Update all Go tools:**
+```bash
+./update_tools.sh
+```
+
+Or use the built-in update option:
+```bash
+./subsprayer.sh -u
+```
+
+This will update:
+- Subfinder
+- HTTPX
+- Gobuster
+- Amass
+- Gungnir
+
 ### Permission Issues
 
 If you encounter permission issues, ensure the scripts are executable:
@@ -156,11 +222,15 @@ If you encounter permission issues, ensure the scripts are executable:
 ```bash
 chmod +x install.sh
 chmod +x subsprayer.sh
+chmod +x update_tools.sh
+chmod +x fix_dependencies.sh
 ```
 
 ## Requirements
 
 - macOS 10.15+ or Linux
+- Go 1.17+ (for Go-based tools)
+- Python 3.6+ (for Python-based tools)
 - Internet connection for tool downloads
 - Sufficient disk space (~500MB for tools and wordlists)
 
